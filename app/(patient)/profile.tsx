@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  SafeAreaView,
   View,
   Text,
   StyleSheet,
@@ -15,6 +14,7 @@ import {
   Keyboard,
   Platform,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 
 /**
@@ -34,7 +34,7 @@ const MUTED = "#6b7280";
 const DANGER = "#d83b3b";
 const SNACK_BG = "#0b6efd";
 
-export default function PatientProfile(): JSX.Element {
+export default function PatientProfile(): React.ReactElement {
   // initial/mock loaded profile
   const initial = useMemo(
     () => ({

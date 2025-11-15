@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
-import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity, Platform, Alert } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Alert } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 type Params = { id?: string };
@@ -25,7 +26,7 @@ export default function AppointmentDetails() {
   const handleCancel = () => {
     console.log("Cancel appointment", id);
     Alert.alert("Cancelled (mock)", "Appointment cancelled (mock).");
-    router.replace("/patient/appointments");
+  router.replace("/patient/appointments" as any);
   };
 
   const handleReschedule = () => {

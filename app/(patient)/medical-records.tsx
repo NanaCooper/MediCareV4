@@ -1,11 +1,11 @@
 import React from "react";
 import {
-  SafeAreaView,
   View,
   Text,
   StyleSheet,
   FlatList,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type RecordItem = {
   id: string;

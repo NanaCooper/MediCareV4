@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  SafeAreaView,
   View,
   Text,
   TextInput,
@@ -13,6 +12,7 @@ import {
   Alert,
   ScrollView,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from "expo-router";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -163,11 +163,11 @@ export default function RegisterScreen() {
               </TouchableOpacity>
               <Text style={styles.termsText}>
                 I agree to the{" "}
-                <Text style={styles.link} onPress={() => router.push("/terms")}>
+                <Text style={styles.link} onPress={() => router.push("/terms" as any)}>
                   Terms
                 </Text>{" "}
                 and{" "}
-                <Text style={styles.link} onPress={() => router.push("/privacy")}>
+                <Text style={styles.link} onPress={() => router.push("/privacy" as any)}>
                   Privacy Policy
                 </Text>
                 .

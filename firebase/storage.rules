@@ -1,0 +1,73 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isDoctor() {
+      return isSignedIn() && 
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'doctor';
+    }
+    
+    function isPatient() {
+      return isSignedIn() && 
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'patient';
+    }
+    
+    function isFileOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // User profile pictures - any signed in user can upload their own
+    match /users/{userId}/profile/{fileName} {
+      allow read: if isSignedIn();
+      allow create, update: if isFileOwner(userId) && 
+        request.resource.size < 5 * 1024 * 1024 && // 5MB max
+        request.resource.contentType.matches('image/.*');
+      allow delete: if isFileOwner(userId);
+    }
+    
+    // Medical documents - strict access control
+    match /medical/{patientId}/{recordId}/{fileName} {
+      allow read: if isSignedIn() && (
+        // Patient can read own records
+        request.auth.uid == patientId ||
+        // Doctor can read if they have an appointment with the patient
+        (isDoctor() && exists(/databases/(default)/documents/appointments/{appointmentId}
+          where appointmentId.patientId == patientId &&
+                appointmentId.doctorId == request.auth.uid))
+      );
+      
+      allow create, update: if isDoctor() && 
+        // Only doctors with appointments can upload
+        exists(/databases/(default)/documents/appointments/{appointmentId}
+          where appointmentId.patientId == patientId &&
+                appointmentId.doctorId == request.auth.uid) &&
+        // File type and size validation
+        request.resource.size < 20 * 1024 * 1024 && // 20MB max
+        (
+          request.resource.contentType.matches('application/pdf') ||
+          request.resource.contentType.matches('image/.*') ||
+          request.resource.contentType.matches('application/dicom') // Medical imaging
+        );
+      
+      allow delete: if false; // Medical documents should never be deleted
+    }
+    
+    // Temporary upload area for pending medical documents
+    match /uploads/{userId}/{fileName} {
+      allow read, create: if isFileOwner(userId) &&
+        request.resource.size < 20 * 1024 * 1024 && // 20MB max
+        (
+          request.resource.contentType.matches('application/pdf') ||
+          request.resource.contentType.matches('image/.*') ||
+          request.resource.contentType.matches('application/dicom')
+        );
+      // Temporary files can be deleted by owner
+      allow delete: if isFileOwner(userId);
+    }
+  }
+}

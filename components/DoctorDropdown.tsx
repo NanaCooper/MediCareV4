@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialIcons, Feather, Ionicons, FontAwesome5 } from "@expo/vector-icons";
+import { useAuth } from "../hooks/useAuth";
 
 // Professional color palette
 const PRIMARY_COLOR = "#0b6efd";
@@ -32,15 +33,29 @@ export default function DoctorDropdown({ visible, onClose, items, offsetY = 72, 
     Animated.timing(anim, { toValue: visible ? 1 : 0, duration: 250, easing: Easing.out(Easing.cubic), useNativeDriver: true, }).start();
   }, [visible, anim]);
 
+  const { signOut } = useAuth();
+
   if (!visible) return null;
 
   const backdropOpacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.4] });
   const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [-12, 0] });
   const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] });
 
-  const handleNavigate = (route: string) => {
+
+  const handleNavigate = async (route: string) => {
     onClose();
-    setTimeout(() => router.replace(route), 100);
+    // If this is the logout action, sign out first then navigate to login
+    if (route === "/login") {
+      try {
+          await signOut();
+        } catch {
+          // swallow errors but still navigate
+        }
+      setTimeout(() => router.replace(route), 100);
+      return;
+    }
+
+  setTimeout(() => router.replace(route as any), 100);
   };
 
   const renderIcon = (icon?: IconSpec) => {

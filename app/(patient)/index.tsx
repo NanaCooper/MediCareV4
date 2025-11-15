@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  SafeAreaView,
   View,
   Text,
   StyleSheet,
@@ -9,6 +8,7 @@ import {
   FlatList,
   Platform,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from "expo-router";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 
@@ -17,7 +17,7 @@ const CARD = "#ffffff";
 const PRIMARY = "#0b6efd";
 const MUTED = "#6b7280";
 
-export default function PatientDashboard(): JSX.Element {
+export default function PatientDashboard(): React.ReactElement {
   const router = useRouter();
 
   const upcoming = [
@@ -59,24 +59,38 @@ export default function PatientDashboard(): JSX.Element {
       <View style={styles.apptRight}>
         <TouchableOpacity
           style={styles.cta}
-          onPress={() => router.push(`/consultation/${item.id}`)}
-          accessibilityLabel="Join consultation"
+          onPress={() => router.push(`/appointments/${item.id}`)}
+          accessibilityLabel="Open appointment details"
         >
-          <Feather name="video" size={14} color="#fff" />
-          <Text style={styles.ctaText}>Join</Text>
+          <Feather name="info" size={14} color="#fff" />
+          <Text style={styles.ctaText}>View</Text>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
 
   const renderActivity = ({ item }: { item: typeof recentActivity[0] }) => (
-    <View style={styles.activityRow}>
+    <TouchableOpacity
+      style={styles.activityRow}
+      activeOpacity={0.8}
+      onPress={() => {
+        // route based on activity type in title
+        const t = (item.title || '').toLowerCase();
+        if (t.includes('lab') || t.includes('result')) {
+          router.push('/(patient)/medical-records');
+        } else if (t.includes('prescription')) {
+          router.push('/(patient)/medical-records');
+        } else if (t.includes('message')) {
+          router.push('/(patient)/messages');
+        }
+      }}
+    >
       <MaterialIcons name="history" size={18} color="#9aa7c7" />
       <View style={{ marginLeft: 12 }}>
         <Text style={styles.activityText}>{item.title}</Text>
         <Text style={styles.activityTime}>{item.time}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -91,7 +105,7 @@ export default function PatientDashboard(): JSX.Element {
         <View style={styles.headerRight}>
           <TouchableOpacity
             style={styles.iconBtn}
-            onPress={() => router.push("/messages")}
+            onPress={() => router.push("/(patient)/messages")}
             accessibilityLabel="Open messages"
           >
             <Feather name="message-circle" size={20} color={PRIMARY} />
@@ -99,7 +113,7 @@ export default function PatientDashboard(): JSX.Element {
 
           <TouchableOpacity
             style={styles.profileBtn}
-            onPress={() => router.push("/patients/you")}
+            onPress={() => router.push("/(patient)/profile")}
             accessibilityLabel="Open profile"
           >
             <Text style={styles.profileInitial}>N</Text>
@@ -109,19 +123,19 @@ export default function PatientDashboard(): JSX.Element {
 
       <View style={styles.container}>
         <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push("/booking/doctor-list")} accessibilityLabel="Book appointment">
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push("/(patient)/appointments")} accessibilityLabel="Book appointment">
             <Feather name="calendar" size={20} color={PRIMARY} />
             <Text style={styles.actionTitle}>Book</Text>
             <Text style={styles.actionSubtitle}>Appointment</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push("/prescriptions")} accessibilityLabel="View prescriptions">
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push("/(patient)/medical-records")} accessibilityLabel="View prescriptions">
             <Feather name="file-text" size={20} color="#16a34a" />
             <Text style={styles.actionTitle}>Prescriptions</Text>
             <Text style={styles.actionSubtitle}>{stats.prescriptions} active</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push("/labs")} accessibilityLabel="View lab results">
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push("/(patient)/medical-records")} accessibilityLabel="View lab results">
             <MaterialIcons name="science" size={20} color="#f59e0b" />
             <Text style={styles.actionTitle}>Labs</Text>
             <Text style={styles.actionSubtitle}>{stats.labResults} results</Text>
@@ -142,20 +156,20 @@ export default function PatientDashboard(): JSX.Element {
         </View>
 
         <View style={styles.rowStats}>
-          <View style={styles.statCard}>
+          <TouchableOpacity style={styles.statCard} activeOpacity={0.85} onPress={() => router.push("/(patient)/appointments")} accessibilityLabel="Open appointments list">
             <Text style={styles.statNumber}>{stats.appointmentsThisMonth}</Text>
             <Text style={styles.statLabel}>Appointments (this month)</Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.statCard}>
+          <TouchableOpacity style={styles.statCard} activeOpacity={0.85} onPress={() => router.push("/(patient)/medical-records")} accessibilityLabel="Open prescriptions">
             <Text style={styles.statNumber}>{stats.prescriptions}</Text>
             <Text style={styles.statLabel}>Active prescriptions</Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.statCard}>
+          <TouchableOpacity style={styles.statCard} activeOpacity={0.85} onPress={() => router.push("/(patient)/medical-records")} accessibilityLabel="Open lab results">
             <Text style={styles.statNumber}>{stats.labResults}</Text>
             <Text style={styles.statLabel}>Lab results</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <View style={[styles.section, { marginTop: 14 }]}>

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
+import { useRouter } from "expo-router";
 import {
-  SafeAreaView,
   View,
   Text,
   StyleSheet,
@@ -8,6 +8,7 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Doctor = {
   id: string;
@@ -18,6 +19,7 @@ type Doctor = {
 };
 
 export default function Doctors() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [specializationFilter, setSpecializationFilter] = useState<string | null>(null);
 
@@ -78,7 +80,7 @@ export default function Doctors() {
               </View>
               <View style={{ alignItems: "flex-end" }}>
                 <Text style={styles.fee}>{item.fee}</Text>
-                <TouchableOpacity style={styles.bookBtn}>
+                <TouchableOpacity style={styles.bookBtn} onPress={() => router.push(`/booking/${item.id}`)}>
                   <Text style={styles.bookBtnText}>Book</Text>
                 </TouchableOpacity>
               </View>

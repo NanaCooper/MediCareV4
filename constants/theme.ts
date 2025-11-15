@@ -37,17 +37,30 @@ export const Fonts = Platform.select({
     rounded: 'ui-rounded',
     /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
+    /** Premium Inter font (fallback to system) */
+    inter: 'Inter',
+    interBold: 'Inter-Bold',
+    interSemiBold: 'Inter-SemiBold',
+    interMedium: 'Inter-Medium',
   },
   default: {
     sans: 'normal',
     serif: 'serif',
     rounded: 'normal',
     mono: 'monospace',
+    inter: 'sans-serif',
+    interBold: 'sans-serif',
+    interSemiBold: 'sans-serif',
+    interMedium: 'sans-serif',
   },
   web: {
     sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
     serif: "Georgia, 'Times New Roman', serif",
     rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    inter: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    interBold: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    interSemiBold: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    interMedium: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
   },
 });

@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
-  SafeAreaView,
   View,
   Text,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
   Alert,
   BackHandler,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from "expo-router";
 
 export default function BookingConfirmationModal() {
@@ -37,8 +37,8 @@ export default function BookingConfirmationModal() {
       router.back();
       return true; // prevent default behavior
     };
-    BackHandler.addEventListener("hardwareBackPress", onBackPress);
-    return () => BackHandler.removeEventListener("hardwareBackPress", onBackPress);
+    const subscription = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+    return () => subscription.remove();
   }, [router, anim]);
 
   const handleConfirm = () => {
@@ -53,7 +53,7 @@ export default function BookingConfirmationModal() {
     console.log("Edit booking requested");
     router.back();
     // Optionally navigate to edit screen after closing
-    setTimeout(() => router.push("/patient/appointments"), 120);
+  setTimeout(() => router.push("/patient/appointments" as any), 120);
   };
 
   return (

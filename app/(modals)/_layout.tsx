@@ -18,9 +18,8 @@ export default function ModalsLayout() {
         gestureDirection: "vertical",
         animation: "slide_from_bottom",
         contentStyle: { backgroundColor: "transparent" },
-        cardStyle: { backgroundColor: "transparent" },
-        gestureResponseDistance:
-          Platform.OS === "ios" ? { vertical: 120 } : { vertical: 80 },
+  // cardStyle removed; contentStyle controls modal background
+        gestureResponseDistance: Platform.OS === "ios" ? ({ vertical: 120 } as any) : ({ vertical: 80 } as any),
       }}
     />
   );

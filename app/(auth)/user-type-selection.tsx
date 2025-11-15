@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import {
-  SafeAreaView,
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   StatusBar,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { useAuth } from "../../hooks/useAuth";
@@ -32,9 +32,9 @@ export default function UserTypeSelection() {
 
     // Navigate to the appropriate dashboard
     if (selection === "patient") {
-      router.replace("/(patient)/");
+      router.replace("/(patient)/" as any);
     } else {
-      router.replace("/(doctor)/");
+      router.replace("/(doctor)/" as any);
     }
   };
 

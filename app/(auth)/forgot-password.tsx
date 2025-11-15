@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  SafeAreaView,
   View,
   Text,
   TextInput,
@@ -12,6 +11,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from "expo-router";
 
 const PRIMARY = "#0b6efd";
@@ -81,7 +81,7 @@ export default function ForgotPasswordScreen() {
           <View style={styles.card}>
             <Text style={styles.title}>Forgot password</Text>
             <Text style={styles.subtitle}>
-              Enter your email and we'll send a secure link to reset your password.
+              Enter your email and we will send a secure link to reset your password.
             </Text>
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -128,7 +128,7 @@ export default function ForgotPasswordScreen() {
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>
-              If you don't receive an email within a few minutes, check your spam folder or contact
+              If you do not receive an email within a few minutes, check your spam folder or contact
               support.
             </Text>
           </View>

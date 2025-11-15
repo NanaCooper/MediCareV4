@@ -4,12 +4,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
-  TextInput,
   ScrollView,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Drawer } from "expo-router/drawer";
 import { useRouter, usePathname } from "expo-router";
+import { useAuth } from "../../hooks/useAuth";
 import { Feather } from "@expo/vector-icons";
 
 // --- Light Theme Colors ---
@@ -30,9 +30,10 @@ const menuItems = [
   { label: "Logout", route: "/login", icon: "log-out" },
 ];
 
-function CustomDrawerContent(props) {
+  function CustomDrawerContent(props: any) {
   const router = useRouter();
   const pathname = usePathname();
+  const { signOut } = useAuth();
 
   return (
     <SafeAreaView style={styles.drawerContainer}>
@@ -40,14 +41,7 @@ function CustomDrawerContent(props) {
         <Text style={styles.drawerTitle}>Doctor Portal</Text>
       </View>
 
-      <View style={styles.searchSection}>
-        <Feather name="search" size={18} color={MUTED_COLOR} style={styles.searchIcon} />
-        <TextInput
-          placeholder="Search..."
-          placeholderTextColor={MUTED_COLOR}
-          style={styles.searchInput}
-        />
-      </View>
+      {/* Search removed per UX request - kept drawer compact */}
 
       <ScrollView style={styles.drawerMenu}>
         {menuItems.map((item) => {
@@ -56,12 +50,17 @@ function CustomDrawerContent(props) {
             <TouchableOpacity
               key={item.label}
               style={[styles.drawerItem, isActive && styles.drawerItemActive]}
-              onPress={() => {
+              onPress={async () => {
                 props.navigation.closeDrawer();
-                router.push(item.route);
+                if (item.route === '/login') {
+                  try { await signOut(); } catch (e) {}
+                  router.replace('/login');
+                } else {
+                  router.push(item.route as any);
+                }
               }}
             >
-              <Feather name={item.icon} size={20} color={isActive ? ACTIVE_TINT : MUTED_COLOR} />
+              <Feather name={item.icon as any} size={20} color={isActive ? ACTIVE_TINT : MUTED_COLOR} />
               <Text style={[styles.drawerLabel, isActive && { color: ACTIVE_TINT }]}>
                 {item.label}
               </Text>
@@ -105,19 +104,7 @@ const styles = StyleSheet.create({
   drawerContainer: { flex: 1, backgroundColor: DRAWER_BG },
   drawerHeader: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 10 },
   drawerTitle: { color: TEXT_COLOR, fontSize: 22, fontWeight: "bold" },
-  searchSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    marginHorizontal: 15,
-    paddingHorizontal: 12,
-    marginVertical: 10,
-    borderColor: BORDER_COLOR,
-    borderWidth: 1,
-  },
-  searchIcon: { marginRight: 10 },
-  searchInput: { flex: 1, height: 40, color: TEXT_COLOR, fontSize: 16 },
+  // searchSection removed
   drawerMenu: { marginTop: 10 },
   drawerItem: {
     flexDirection: "row",

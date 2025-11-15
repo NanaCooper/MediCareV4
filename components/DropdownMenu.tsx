@@ -10,6 +10,7 @@ import {
   ViewStyle,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useAuth } from "../hooks/useAuth";
 import { Feather } from "@expo/vector-icons";
 
 // Consistent professional color palette
@@ -30,6 +31,7 @@ export default function DropdownMenu({ visible, onClose, items, offsetY = 56, st
   useEffect(() => {
     Animated.timing(anim, { toValue: visible ? 1 : 0, duration: 250, easing: Easing.out(Easing.cubic), useNativeDriver: true, }).start();
   }, [visible, anim]);
+  const { signOut } = useAuth();
 
   if (!visible) return null;
 
@@ -37,9 +39,18 @@ export default function DropdownMenu({ visible, onClose, items, offsetY = 56, st
   const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [-12, 0] });
   const scale = anim.interpolate({ inputRange: [0, 1], outputRange: [0.97, 1] });
 
-  const handleNavigate = (route: string) => {
+  const handleNavigate = async (route: string) => {
     onClose();
-    setTimeout(() => router.push(route), 100);
+    if (route === '/login') {
+      try {
+        await signOut();
+      } catch {
+        // ignore
+      }
+      setTimeout(() => router.replace(route), 100);
+      return;
+    }
+  setTimeout(() => router.push(route as any), 100);
   };
 
   return (

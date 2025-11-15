@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  SafeAreaView,
   View,
   Text,
   StyleSheet,
@@ -8,6 +7,7 @@ import {
   StatusBar,
   FlatList,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
@@ -35,8 +35,8 @@ export default function DoctorDashboard() {
     { id: "2", from: "Alex Riley", text: "Can we reschedule tomorrow?", time: "Yesterday" },
   ];
 
-  const StatCard = ({ icon, value, label }: { icon: React.ReactNode; value: number | string; label: string }) => (
-    <TouchableOpacity style={styles.statCard} activeOpacity={0.85}>
+  const StatCard = ({ icon, value, label, onPress }: { icon: React.ReactNode; value: number | string; label: string; onPress?: () => void }) => (
+    <TouchableOpacity style={styles.statCard} activeOpacity={0.85} onPress={onPress}>
       <View style={styles.statIconWrap}>{icon}</View>
       <Text style={styles.statNumber}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
@@ -72,8 +72,18 @@ export default function DoctorDashboard() {
       <StatusBar barStyle="dark-content" backgroundColor={BG} />
       <View style={styles.container}>
         <View style={styles.cardRow}>
-          <StatCard icon={<MaterialIcons name="calendar-today" size={20} color={PRIMARY} />} value={todaysAppointments} label="Today's Appointments" />
-          <StatCard icon={<Feather name="users" size={20} color="#16a34a" />} value={patientsInQueue} label="In Queue" />
+          <StatCard
+            icon={<MaterialIcons name="calendar-today" size={20} color={PRIMARY} />}
+            value={todaysAppointments}
+            label="Today's Appointments"
+            onPress={() => router.push("/(doctor)/schedule")}
+          />
+          <StatCard
+            icon={<Feather name="users" size={20} color="#16a34a" />}
+            value={patientsInQueue}
+            label="In Queue"
+            onPress={() => router.push("/(doctor)/queue")}
+          />
         </View>
 
         <View style={styles.bigCard}>
@@ -97,7 +107,7 @@ export default function DoctorDashboard() {
         <View style={styles.messagesCard}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Messages</Text>
-            <TouchableOpacity onPress={() => router.push("/doctor/messages")}>
+            <TouchableOpacity onPress={() => router.push("/(doctor)/messages")}>
               <Text style={styles.viewAll}>View all</Text>
             </TouchableOpacity>
           </View>

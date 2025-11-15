@@ -16,11 +16,10 @@ export default function AuthLayout() {
         animation: "slide_from_right",
         // Ensure consistent background across all auth screens
         contentStyle: { backgroundColor: "#ffffff" },
-        // Card style (shadow/elevation) to make transitions feel native
-        cardStyle: { backgroundColor: "#ffffff" },
+  // Card style (shadow/elevation) to make transitions feel native
+  // cardStyle intentionally omitted to satisfy native-stack types; use contentStyle instead
         // Tweak gesture sensitivity per platform for a better mobile UX
-        gestureResponseDistance:
-          Platform.OS === "ios" ? { horizontal: 30 } : { horizontal: 20 },
+  gestureResponseDistance: Platform.OS === "ios" ? ({ horizontal: 30 } as any) : ({ horizontal: 20 } as any),
         // Keep header styling consistent in case a screen shows a header later
         headerStyle: { backgroundColor: "#ffffff" },
       }}

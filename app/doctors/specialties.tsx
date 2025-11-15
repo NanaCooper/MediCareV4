@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
-import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity, FlatList } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, FlatList } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from "expo-router";
 
 export default function SpecialtiesScreen() {
@@ -15,7 +16,7 @@ export default function SpecialtiesScreen() {
         keyExtractor={(s) => s}
         contentContainerStyle={{ padding: 16 }}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.item} onPress={() => router.push(`/patient/doctors?specialty=${encodeURIComponent(item)}`)}>
+          <TouchableOpacity style={styles.item} onPress={() => router.push((`/patient/doctors?specialty=${encodeURIComponent(item)}`) as any)}>
             <Text style={styles.itemText}>{item}</Text>
             <Text style={styles.chev}>›</Text>
           </TouchableOpacity>

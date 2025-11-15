@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  SafeAreaView,
   View,
   Text,
   StyleSheet,
@@ -8,6 +7,7 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from "expo-router";
 
 export default function BranchInfoModal() {

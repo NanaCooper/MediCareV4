@@ -1,0 +1,112 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions for common checks
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isDoctor() {
+      return isSignedIn() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'doctor';
+    }
+    
+    function isPatient() {
+      return isSignedIn() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'patient';
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isAppointmentParticipant(appointmentData) {
+      return isSignedIn() && (
+        request.auth.uid == appointmentData.patientId || 
+        request.auth.uid == appointmentData.doctorId
+      );
+    }
+
+    function isConversationParticipant(conversationData) {
+      return isSignedIn() && (
+        request.auth.uid == conversationData.patientId || 
+        request.auth.uid == conversationData.doctorId
+      );
+    }
+
+    // User profiles - users can read their own profile, doctors can read their patients'
+    match /users/{userId} {
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isSignedIn() && (
+        isOwner(userId) || 
+        isAdmin() ||
+        (isDoctor() && exists(/databases/$(database)/documents/appointments/{appointmentId} 
+          where appointmentId.patientId == userId && 
+                appointmentId.doctorId == request.auth.uid))
+      );
+      allow update: if isOwner(userId) && 
+        request.resource.data.role == resource.data.role; // Can't change own role
+    }
+
+    // Appointments - only participants can read/write
+    match /appointments/{appointmentId} {
+      allow create: if isSignedIn() && (
+        (isPatient() && request.resource.data.patientId == request.auth.uid) ||
+        (isDoctor() && request.resource.data.doctorId == request.auth.uid)
+      );
+      allow read: if isSignedIn() && isAppointmentParticipant(resource.data);
+      allow update: if isSignedIn() && 
+        isAppointmentParticipant(resource.data) && 
+        isAppointmentParticipant(request.resource.data) &&
+        // Prevent changing patient/doctor IDs
+        request.resource.data.patientId == resource.data.patientId &&
+        request.resource.data.doctorId == resource.data.doctorId;
+      allow delete: if isSignedIn() && isAppointmentParticipant(resource.data);
+    }
+
+    // Doctor availability - only the doctor can write, patients can read
+    match /availability/{doctorId}/dates/{dateId} {
+      allow create, update, delete: if isSignedIn() && request.auth.uid == doctorId;
+      allow read: if isSignedIn();
+    }
+
+    // Medical records - strict access control
+    match /medicalRecords/{recordId} {
+      allow create: if isDoctor() && 
+        request.resource.data.doctorId == request.auth.uid;
+      allow read: if isSignedIn() && (
+        request.auth.uid == resource.data.patientId || 
+        request.auth.uid == resource.data.doctorId ||
+        (isDoctor() && exists(/databases/$(database)/documents/appointments/{appointmentId} 
+          where appointmentId.patientId == resource.data.patientId && 
+                appointmentId.doctorId == request.auth.uid))
+      );
+      allow update: if isDoctor() && request.auth.uid == resource.data.doctorId;
+      allow delete: if false; // Medical records should never be deleted
+    }
+
+    // Messages in conversations
+    match /conversations/{conversationId} {
+      allow create: if isSignedIn() && (
+        request.resource.data.patientId == request.auth.uid ||
+        (isDoctor() && request.resource.data.doctorId == request.auth.uid)
+      );
+      allow read: if isSignedIn() && isConversationParticipant(resource.data);
+
+      match /messages/{messageId} {
+        allow create: if isSignedIn() && 
+          isConversationParticipant(get(/databases/$(database)/documents/conversations/$(conversationId)).data) && 
+          request.resource.data.senderId == request.auth.uid;
+        allow read: if isSignedIn() && 
+          isConversationParticipant(get(/databases/$(database)/documents/conversations/$(conversationId)).data);
+        allow update, delete: if false; // Messages can't be edited or deleted
+      }
+    }
+  }
+}

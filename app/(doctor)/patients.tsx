@@ -3,13 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   FlatList,
   TextInput,
   StatusBar,
   Pressable,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 
@@ -103,7 +103,7 @@ export default function MyPatients() {
 
           <TouchableOpacity
             style={styles.addBtn}
-            onPress={() => router.push("/doctor/my-patients/new")}
+            onPress={() => router.push("/doctor/my-patients/new" as any)}    
             accessibilityLabel="Add patient"
           >
             <Feather name="user-plus" size={18} color="#fff" />

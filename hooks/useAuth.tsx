@@ -1,17 +1,17 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { useRouter, useSegments } from 'expo-router';
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, User, createUserWithEmailAndPassword } from 'firebase/auth'; // Added createUserWithEmailAndPassword
-import { doc, getDoc, setDoc } from 'firebase/firestore'; // Added setDoc
-import { db } from '../utils/firebaseConfig';
+import { db, doc, getDoc, setDoc, getAuthInstance } from '../utils/firebaseConfig';
+
+type User = { uid: string; email?: string | null } | null;
 
 interface AuthContextType {
   signIn: (email?: string, password?: string) => Promise<void>;
   signOut: () => Promise<void>;
-  signUp: (email?: string, password?: string, role?: 'patient' | 'doctor') => Promise<void>; // Added signUp
-  session?: User | null;
+  signUp: (email?: string, password?: string, role?: 'patient' | 'doctor') => Promise<void>;
+  session?: User;
   isLoading: boolean;
   userType?: string | null;
-  setUserType: (type: 'patient' | 'doctor') => Promise<void>; // setUserType now returns a Promise
+  setUserType: (type: 'patient' | 'doctor') => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,9 +37,9 @@ function useProtectedRoute(session: User | null | undefined, isLoading: boolean,
         if (session && inAuthGroup) {
             if (userType) {
                 if (userType === 'patient') {
-                    router.replace('/(patient)/');
+                    router.replace('/(patient)');
                 } else if (userType === 'doctor') {
-                    router.replace('/(doctor)/');
+                    router.replace('/(doctor)');
                 }
             } else {
                 // If userType is not set (e.g., new user just signed up), go to user type selection
@@ -56,7 +56,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userType, setUserTypeState] = useState<string | null>(null);
-  const auth = getAuth();
+  // We use a lazily-initialized auth instance provided by utils/firebaseConfig.
+  // Call getAuthInstance() where needed to ensure the React Native persistence
+  // initialization (if available) has completed.
 
   const signIn = async (email?: string, password?: string) => {
     if (!email || !password) {
@@ -64,7 +66,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setIsLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const authInst = await getAuthInstance();
+      // shim auth provides method-style API; real firebase modular SDK uses function import.
+      if (authInst && typeof authInst.signInWithEmailAndPassword === 'function') {
+        await authInst.signInWithEmailAndPassword(email, password);
+      } else {
+        const { signInWithEmailAndPassword } = await import('firebase/auth');
+        await signInWithEmailAndPassword(authInst, email, password);
+      }
     } catch (error: any) {
       setIsLoading(false); // Ensure loading state is reset on error
       console.error("Firebase Sign In Error:", error.message);
@@ -78,14 +87,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setIsLoading(true);
     try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        // Create user document in Firestore immediately after successful registration
-        await setDoc(doc(db, "users", userCredential.user.uid), {
-            email: userCredential.user.email,
-            role: role,
-            createdAt: new Date().toISOString(),
-        });
-        // onAuthStateChanged will handle setting the session and userType
+      const authInst = await getAuthInstance();
+      let userCredential: any = null;
+      if (authInst && typeof authInst.createUserWithEmailAndPassword === 'function') {
+        userCredential = await authInst.createUserWithEmailAndPassword(email, password);
+      } else {
+        const { createUserWithEmailAndPassword } = await import('firebase/auth');
+        userCredential = await createUserWithEmailAndPassword(authInst, email, password);
+      }
+      // Create user document in Firestore immediately after successful registration
+      await setDoc(doc(db, "users", userCredential.user.uid), {
+        email: userCredential.user.email,
+        role: role,
+        createdAt: new Date().toISOString(),
+      });
+      // onAuthStateChanged will handle setting the session and userType
     } catch (error: any) {
         setIsLoading(false);
         console.error("Firebase Sign Up Error:", error.message);
@@ -93,10 +109,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const signOut = async () => {
+  const signOutUser = async () => {
     setIsLoading(true);
     try {
-      await signOut(auth);
+      const authInst = await getAuthInstance();
+      if (authInst && typeof authInst.signOut === 'function') {
+        await authInst.signOut();
+      } else {
+        const { signOut: firebaseSignOut } = await import('firebase/auth');
+        await firebaseSignOut(authInst);
+      }
     } catch (error: any) {
       setIsLoading(false);
       console.error("Firebase Sign Out Error:", error.message);
@@ -121,29 +143,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setSession(user);
-      if (user) {
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-          setUserTypeState(userSnap.data().role || null);
-        } else {
-          setUserTypeState(null);
-        }
+    let unsubscribe: (() => void) | undefined;
+    let mounted = true;
+
+    (async () => {
+      const authInst = await getAuthInstance();
+      if (!mounted) return;
+      // shim provides onAuthStateChanged as a method; real SDK exposes a function.
+      if (authInst && typeof authInst.onAuthStateChanged === 'function') {
+        unsubscribe = authInst.onAuthStateChanged(async (user: any) => {
+          setSession(user);
+          if (user) {
+            const userRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+              setUserTypeState(userSnap.data().role || null);
+            } else {
+              setUserTypeState(null);
+            }
+          } else {
+            setUserTypeState(null);
+          }
+          setIsLoading(false);
+        });
       } else {
-        setUserTypeState(null);
+        const { onAuthStateChanged } = await import('firebase/auth');
+        unsubscribe = onAuthStateChanged(authInst, async (user) => {
+          setSession(user);
+          if (user) {
+            const userRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+              setUserTypeState(userSnap.data().role || null);
+            } else {
+              setUserTypeState(null);
+            }
+          } else {
+            setUserTypeState(null);
+          }
+          setIsLoading(false);
+        });
       }
-      setIsLoading(false);
-    });
-    return () => unsubscribe();
-  }, [auth]);
+    })();
+
+    return () => {
+      mounted = false;
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
   useProtectedRoute(session, isLoading, userType);
 
   const value = {
     signIn,
-    signOut,
+    signOut: signOutUser,
     signUp,
     session,
     isLoading,
