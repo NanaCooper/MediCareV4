@@ -23,18 +23,15 @@ export async function signInWithGoogle(): Promise<void> {
     return;
   }
 
-  // Native environment: try Expo AuthSession flow.
+  // Native environment: use Expo AuthRequest with system browser (no proxy needed).
   try {
     const AuthSession: any = await import('expo-auth-session');
 
-    // You must supply a native OAuth client id for Android/iOS. We look for
-    // a client id in environment variables (process.env) or in expo Constants
-    // under `extra` (app.json -> extra). If not provided, throw with guidance.
+    // Get native OAuth client ID from env or app.json extra
     let clientId: string | undefined = process.env.EXPO_GOOGLE_OAUTH_CLIENT_ID;
     if (!clientId) {
       try {
         const Constants = await import('expo-constants');
-        // Try common locations for client id
         clientId = Constants?.default?.manifest?.extra?.googleClientId || Constants?.default?.expoConfig?.extra?.googleClientId;
       } catch {
         // ignore
@@ -47,19 +44,20 @@ export async function signInWithGoogle(): Promise<void> {
       );
     }
 
-    const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
+    // Use system browser redirect instead of proxy (simpler, no project slug needed)
+    const redirectUri = AuthSession.makeRedirectUri({ useProxy: false });
 
-    const params = new URLSearchParams({
-      client_id: clientId,
-      redirect_uri: redirectUri,
-      response_type: 'id_token',
-      scope: 'openid email profile',
-      nonce: 'nonce',
+    // Create AuthRequest for Google OAuth
+    const request = new (AuthSession as any).AuthRequest({
+      clientId,
+      redirectUrl: redirectUri,
+      scopes: ['openid', 'email', 'profile'],
+      responseType: 'id_token',
+      extraParams: { nonce: 'nonce' },
     });
 
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-
-    const result = await AuthSession.startAsync({ authUrl });
+    // Prompt user with system browser
+    const result = await request.promptAsync();
 
     if (result?.type === 'success' && result.params?.id_token) {
       const idToken = result.params.id_token as string;
@@ -73,7 +71,6 @@ export async function signInWithGoogle(): Promise<void> {
 
     throw new Error('Google authentication was cancelled or failed.');
   } catch (err: any) {
-    // Re-throw with helpful guidance for the developer
     throw new Error(err?.message || 'Failed to sign in with Google on native.');
   }
 }
