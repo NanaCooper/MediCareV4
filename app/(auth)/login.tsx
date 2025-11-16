@@ -11,9 +11,11 @@ import {
   ActivityIndicator,
   Pressable,
 } from "react-native";
+import { AntDesign } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from "expo-router";
 import { useAuth } from "../../hooks/useAuth";
+import { signInWithGoogle } from '../../services/auth';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -146,6 +148,33 @@ export default function LoginScreen() {
               <Text style={styles.dividerText}>or</Text>
               <View style={styles.divider} />
             </View>
+
+            <TouchableOpacity
+              style={[styles.googleBtn, overallLoading && styles.primaryBtnDisabled]}
+              onPress={async () => {
+                setError(null);
+                setLoading(true);
+                try {
+                  await signInWithGoogle();
+                } catch (err: any) {
+                  console.warn('Google sign-in error', err);
+                  setError(err?.message || 'Google sign in failed.');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              accessibilityRole="button"
+              disabled={overallLoading}
+            >
+              {overallLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <View style={styles.googleContent}>
+                  <AntDesign name="google" size={18} color="#fff" />
+                  <Text style={styles.googleBtnText}>Sign in with Google</Text>
+                </View>
+              )}
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.secondaryBtn}
@@ -320,5 +349,22 @@ const styles = StyleSheet.create({
   link: {
     color: PRIMARY,
     fontWeight: "700",
+  },
+  googleBtn: {
+    backgroundColor: '#de4d41',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  googleContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  googleBtnText: {
+    color: '#fff',
+    fontWeight: '700',
+    marginLeft: 10,
   },
 });
