@@ -23,7 +23,7 @@ export async function signInWithGoogle(): Promise<void> {
     return;
   }
 
-  // Native environment: use Expo AuthRequest with system browser (no proxy needed).
+  // Native environment: use Expo AuthRequest with system browser.
   try {
     const AuthSession: any = await import('expo-auth-session');
 
@@ -44,8 +44,19 @@ export async function signInWithGoogle(): Promise<void> {
       );
     }
 
-    // Use system browser redirect instead of proxy (simpler, no project slug needed)
-    const redirectUri = AuthSession.makeRedirectUri({ useProxy: false });
+    // Build custom scheme redirect URI (required by AuthRequest)
+    // Format: com.your.app:/oauthredirect
+    // Use the package name from app.json or a fallback
+    let packageName = 'com.cooperlistic.MediCare'; // fallback
+    try {
+      const Constants = await import('expo-constants');
+      const appJson = Constants?.default?.manifest?.android || Constants?.default?.expoConfig?.android;
+      packageName = appJson?.package || packageName;
+    } catch {
+      // use fallback
+    }
+
+    const redirectUri = `${packageName}:/oauthredirect`;
 
     // Create AuthRequest for Google OAuth
     const request = new (AuthSession as any).AuthRequest({
